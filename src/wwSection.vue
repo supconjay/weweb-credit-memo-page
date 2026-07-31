@@ -292,6 +292,10 @@ export default {
       }
       return map;
     },
+    // Status vocabulary. Comma-separated in the editor; also accepts an array.
+    approvedStatusList() { return this.parseList(this.content.approvedStatuses, "Processed"); },
+    reviewStatusList() { return this.parseList(this.content.reviewStatuses, "Submitted, In Review"); },
+    declinedStatusList() { return this.parseList(this.content.declinedStatuses, ""); },
     filtered() {
       let rows = this.rawRows.filter((r) => r && typeof r === "object");
       const q = this.content.searchable !== false ? String(this.query || "").trim().toLowerCase() : "";
@@ -308,7 +312,8 @@ export default {
       let mine = 0, pending = 0, approved = 0;
       for (let i = 0; i < this.filtered.length; i++) {
         const r = this.filtered[i];
-        if (this.isComplete(r)) approved++; else pending++;
+        if (this.isComplete(r)) approved++;
+        else if (!this.isDeclined(r)) pending++;
         if (this.needsMe(r)) mine++;
       }
       return { all: this.filtered.length, mine, pending, approved };
@@ -326,7 +331,7 @@ export default {
       const t = this.content.showTabs === false ? "all" : this.tab;
       let rows = this.filtered;
       if (t === "mine") rows = rows.filter((r) => this.needsMe(r));
-      else if (t === "pending") rows = rows.filter((r) => !this.isComplete(r));
+      else if (t === "pending") rows = rows.filter((r) => !this.isComplete(r) && !this.isDeclined(r));
       else if (t === "approved") rows = rows.filter((r) => this.isComplete(r));
       const sort = this.content.sortBy || "none";
       if (sort !== "none") {
@@ -342,7 +347,7 @@ export default {
       let sum = 0;
       for (let i = 0; i < this.filtered.length; i++) {
         const r = this.filtered[i];
-        if (!this.isComplete(r)) sum += this.num(r, "amountKey");
+        if (!this.isComplete(r) && !this.isDeclined(r)) sum += this.num(r, "amountKey");
       }
       return sum;
     },
@@ -426,6 +431,11 @@ export default {
       return x === 1;
     },
     toTime(v) { const d = new Date(Array.isArray(v) ? v[0] : v); return isNaN(d.getTime()) ? 0 : d.getTime(); },
+    parseList(v, fallback) {
+      const src = v == null || String(v).trim() === "" ? fallback : v;
+      const arr = Array.isArray(src) ? src : String(src).split(",");
+      return arr.map((s) => String(s).trim().toLowerCase()).filter((s) => s !== "");
+    },
     idList(v) {
       if (v == null || v === "") return [];
       const arr = Array.isArray(v) ? v : [v];
@@ -458,7 +468,17 @@ export default {
       return { approved, ids, mine };
     },
     approvedCount(r) { return (this.slot(r, 1).approved ? 1 : 0) + (this.slot(r, 2).approved ? 1 : 0); },
-    isComplete(r) { return this.approvedCount(r) >= 2 || (this.content.adminCompletes === true && this.adminApproved(r)); },
+    // The Status field wins when it names a settled state (e.g. "Processed"),
+    // otherwise completion is inferred from the two approval ticks.
+    isComplete(r) {
+      if (this.isStatusApproved(r)) return true;
+      if (this.isStatusDeclined(r)) return false;
+      return this.approvedCount(r) >= 2 || (this.content.adminCompletes === true && this.adminApproved(r));
+    },
+    statusOf(r) { return String(this.text(r, "statusKey")).trim().toLowerCase(); },
+    isStatusApproved(r) { const s = this.statusOf(r); return s !== "" && this.approvedStatusList.indexOf(s) !== -1; },
+    isStatusDeclined(r) { const s = this.statusOf(r); return s !== "" && this.declinedStatusList.indexOf(s) !== -1; },
+    isDeclined(r) { return this.isStatusDeclined(r); },
     adminApproved(r) { return this.truthy(this.raw(r, "adminApprovalKey")); },
     // Is the signed-in user one of this memo's designated approvers?
     isApprover(r) {
@@ -471,6 +491,8 @@ export default {
     adminCanOverride() { return this.isAdmin && this.content.adminOverride !== false; },
     // Can the signed-in user tick / untick this slot right now?
     canToggle(r, n) {
+      // Once a memo is processed (or declined) its approvals are frozen.
+      if (this.content.lockWhenSettled !== false && (this.isStatusApproved(r) || this.isStatusDeclined(r))) return false;
       const s = this.slot(r, n);
       const admin = this.adminCanOverride();
       if (s.approved) {
@@ -487,7 +509,7 @@ export default {
       return true;
     },
     needsMe(r) {
-      if (this.isComplete(r)) return false;
+      if (this.isComplete(r) || this.isDeclined(r)) return false;
       if (!this.isApprover(r)) return false;
       return (!this.slot(r, 1).approved && this.canToggle(r, 1)) || (!this.slot(r, 2).approved && this.canToggle(r, 2));
     },
@@ -511,15 +533,23 @@ export default {
       const s = this.stateOf(r);
       return s === "done" ? "check-circle" : (s === "half" ? "clock" : "circle");
     },
+    // Configured status lists win; the regex is only a fallback for values
+    // that were never listed.
     statusTone(r) {
-      const s = String(this.text(r, "statusKey")).toLowerCase();
+      const s = this.statusOf(r);
+      if (!s) return "slate";
+      if (this.declinedStatusList.indexOf(s) !== -1) return "danger";
+      if (this.approvedStatusList.indexOf(s) !== -1) return "success";
+      if (this.reviewStatusList.indexOf(s) !== -1) return "warning";
       if (/declin|reject|denied|void|cancel/.test(s)) return "danger";
       if (/review|pending|await|hold|progress|submitted/.test(s)) return "warning";
-      if (/approv|complete|done|closed|applied|issued/.test(s)) return "success";
+      if (/approv|process|complete|done|closed|applied|issued|paid/.test(s)) return "success";
       if (/new|draft|open/.test(s)) return "info";
       return "slate";
     },
     noteFor(r) {
+      if (this.isStatusDeclined(r)) return this.content.declinedNote || "This credit memo was declined.";
+      if (this.isStatusApproved(r)) return this.content.processedNote || "This credit memo has been processed.";
       if (this.isComplete(r)) return this.content.completeNote || "Fully approved — ready to process.";
       if (this.adminCanOverride()) return null;
       if (!this.isApprover(r)) return this.content.notApproverNote || "You are not listed as an approver on this credit memo.";

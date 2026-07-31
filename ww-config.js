@@ -72,6 +72,22 @@ export default {
           credit_memo_approvers_supabase_ids: ["9e0b1a2b-10c4-4b64-8fcf-cde66793d85a"],
           id: "recQ2mLPz9Ab4nXk1",
         },
+        {
+          UID: "Credit Memo #35 - INV-HE904-3",
+          Reason: "Goodwill credit for scheduling delay",
+          Status: "Processed",
+          "Name (from Invoice)": ["INV-HE904-3"],
+          Created: "2026-05-27T14:41:00.000Z",
+          submitted_by_name: ["Marlene Puguon"],
+          Amount: 425,
+          "Approval 1": true,
+          "Approval 2": true,
+          "Approver 1": ["recRIG8MWFcPzfyzt"],
+          "Approver 2": ["recA1bCd2EfGh3IjK"],
+          lob_name: ["Repipe"],
+          credit_memo_approvers_supabase_ids: [],
+          id: "recL7pQr4St5Uv6Wx",
+        },
       ],
     },
 
@@ -111,6 +127,35 @@ export default {
       /* wwEditor:start */
       propertyHelp: { tooltip: "Bind a formula such as user.role == 'Admin'. Reveals the admin approval row." },
       /* wwEditor:end */
+    },
+
+    // ────────────────────────────────────────────────────────────────
+    // Status vocabulary — comma-separated, must match the Status field's
+    // single-select options exactly (case-insensitive).
+    //   review   -> counted as "In review" and still actionable
+    //   approved -> counted as "Approved"; approvals are frozen
+    //   declined -> counted as neither; approvals are frozen
+    // ────────────────────────────────────────────────────────────────
+    reviewStatuses: {
+      label: { en: "Statuses: in review" }, type: "Text", defaultValue: "Submitted, In Review", bindable: true,
+      /* wwEditor:start */
+      propertyHelp: { tooltip: "Comma-separated Status values that count as still in review, e.g. 'Submitted, In Review'." },
+      /* wwEditor:end */
+    },
+    approvedStatuses: {
+      label: { en: "Statuses: approved" }, type: "Text", defaultValue: "Processed", bindable: true,
+      /* wwEditor:start */
+      propertyHelp: { tooltip: "Comma-separated Status values that count as fully approved, e.g. 'Processed'. These land in the Approved tab and lock their approvals." },
+      /* wwEditor:end */
+    },
+    declinedStatuses: {
+      label: { en: "Statuses: declined" }, type: "Text", defaultValue: "", bindable: true,
+      /* wwEditor:start */
+      propertyHelp: { tooltip: "Optional. Comma-separated Status values that count as declined, e.g. 'Declined, Void'. Excluded from In review and locked." },
+      /* wwEditor:end */
+    },
+    lockWhenSettled: {
+      label: { en: "Lock approvals once approved/declined" }, type: "OnOff", defaultValue: true, bindable: true, section: "settings",
     },
 
     // ────────────────────────────────────────────────────────────────
@@ -232,6 +277,8 @@ export default {
     awaitingText: { label: { en: "Awaiting text" }, type: "Text", defaultValue: "Awaiting approval", bindable: true, section: "settings" },
     assignedText: { label: { en: "Assigned-to prefix" }, type: "Text", defaultValue: "Assigned to", bindable: true, section: "settings" },
     completeNote: { label: { en: "Fully-approved note" }, type: "Text", defaultValue: "Fully approved — ready to process.", bindable: true, section: "settings" },
+    processedNote: { label: { en: "Processed note" }, type: "Text", defaultValue: "This credit memo has been processed.", bindable: true, section: "settings" },
+    declinedNote: { label: { en: "Declined note" }, type: "Text", defaultValue: "This credit memo was declined.", bindable: true, section: "settings" },
     secondApproverNote: { label: { en: "Second-approver note" }, type: "Text", defaultValue: "Your approval is recorded — a second approver is still required.", bindable: true, section: "settings" },
     notApproverNote: { label: { en: "Not-an-approver note" }, type: "Text", defaultValue: "You are not listed as an approver on this credit memo.", bindable: true, section: "settings" },
     amountLabel: { label: { en: "Amount caption" }, type: "Text", defaultValue: "Credit", bindable: true, section: "settings" },
