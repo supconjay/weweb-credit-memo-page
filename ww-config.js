@@ -291,7 +291,6 @@ export default {
     statMineLabel: { label: { en: "Stat: awaiting you" }, type: "Text", defaultValue: "Awaiting you", bindable: true, section: "settings" },
     statPendingLabel: { label: { en: "Stat: in review" }, type: "Text", defaultValue: "In review", bindable: true, section: "settings" },
     statApprovedLabel: { label: { en: "Stat: fully approved" }, type: "Text", defaultValue: "Fully approved", bindable: true, section: "settings" },
-    statValueLabel: { label: { en: "Stat: pending value" }, type: "Text", defaultValue: "Pending value", bindable: true, section: "settings" },
     emptyText: { label: { en: "Empty text" }, type: "Text", defaultValue: "No credit memos to show", bindable: true, section: "settings" },
     emptyMineText: { label: { en: "Empty text (needs my approval)" }, type: "Text", defaultValue: "Nothing is waiting on your approval", bindable: true, section: "settings" },
     emptySearchText: { label: { en: "Empty text (search)" }, type: "Text", defaultValue: "No credit memos match your search", bindable: true, section: "settings" },

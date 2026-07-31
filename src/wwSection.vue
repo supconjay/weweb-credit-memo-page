@@ -31,10 +31,6 @@
         <span class="pp-stat__label">{{ content.statApprovedLabel || 'Fully approved' }}</span>
         <span class="pp-stat__value">{{ counts.approved }}</span>
       </div>
-      <div class="pp-stat">
-        <span class="pp-stat__label">{{ content.statValueLabel || 'Pending value' }}</span>
-        <span class="pp-stat__value">{{ money(pendingAmount) }}</span>
-      </div>
     </div>
 
     <!-- ── Tabs ────────────────────────────────────────────────────── -->
@@ -342,14 +338,6 @@ export default {
         });
       }
       return rows;
-    },
-    pendingAmount() {
-      let sum = 0;
-      for (let i = 0; i < this.filtered.length; i++) {
-        const r = this.filtered[i];
-        if (!this.isComplete(r) && !this.isDeclined(r)) sum += this.num(r, "amountKey");
-      }
-      return sum;
     },
     emptyText() {
       if (this.query) return this.content.emptySearchText || "No credit memos match your search";
@@ -675,7 +663,7 @@ export default {
 .pp-adminbadge .pp-svg { width: 14px; height: 14px; }
 
 /* Summary */
-.pp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .pp-stat { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
 .pp-stat--live { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 6%, var(--surface)); }
 .pp-stat__label { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-subtle); }
@@ -795,11 +783,12 @@ export default {
 .pp-svg { display: block; }
 
 /* Responsive */
-@container (max-width: 820px) {
-  .pp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 @container (max-width: 560px) {
   .pp-root { font-size: 15px; }
+  .pp-stats { gap: 8px; }
+  .pp-stat { padding: 11px 12px; }
+  .pp-stat__label { font-size: 10.5px; }
+  .pp-stat__value { font-size: 18px; }
   .pp-head__right { width: 100%; }
   .pp-search { flex: 1; }
   .pp-search input { width: 100%; max-width: none; }
